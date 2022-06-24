@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Notifications\Encyclopedia\EntryDebate;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
+use App\Home\Encyclopedia\EntryDebate;
+use App\Home\Encyclopedia\Entry;
+use Carbon\Carbon;
+
+class EntryDebateAFDCreatedNotification extends Notification
+{
+    use Queueable;
+
+    /**
+     * Create a new notification instance.
+     *
+     * @return void
+     */
+    public function __construct(EntryDebate $entryDebate)
+    {
+        $this->entryDebate = $entryDebate;
+    }
+
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function via($notifiable)
+    {
+        return ['database'];
+    }
+
+    // 词条辩论创建成功后通知相关用户
+    public function toDatabase($notifiable)
+    {
+        $entry = Entry::find($this->entryDebate->eid);
+        $link = '/encyclopedia/debate/'.$entry->id.'/'.$entry->title.'?type='.$this->entryDebate->type.'&type_id='.$this->entryDebate->type_id;
+        $time = Carbon::parse($this->entryDebate->AFDcreateTime)->addDays(5);
+        // $doer = User::find($this->entryDebate->Aauthor_id);
+        return [
+            'creator_id'    => $this->entryDebate->Aauthor_id,
+            'creator'       => $this->entryDebate->Aauthor,
+            'link'          => $link,
+            'matter'        => '对方['.$this->entryDebate->Aauthor.']已经在攻辩：<'.$this->entryDebate->title.'>发表攻方自由辩论。你可以在'.$time.'前回复。[来自词条：《'.$entry->title.'》]。'
+        ];
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function toArray($notifiable)
+    {
+        return [
+            //
+        ];
+    }
+}

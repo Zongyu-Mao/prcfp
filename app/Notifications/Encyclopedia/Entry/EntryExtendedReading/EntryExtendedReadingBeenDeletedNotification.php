@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Notifications\Encyclopedia\Entry\EntryExtendedReading;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
+use App\Home\Encyclopedia\Entry\Extended\EntryExtendedEntryReading;
+use App\Home\Encyclopedia\Entry;
+use Illuminate\Support\Facades\Auth;
+
+class EntryExtendedReadingBeenDeletedNotification extends Notification
+{
+    use Queueable;
+
+    /**
+     * Create a new notification instance.
+     *
+     * @return void
+     */
+    public function __construct(EntryExtendedEntryReading $entryExtendedEntryReading)
+    {
+        $this->entryExtendedEntryReading = $entryExtendedEntryReading;
+    }
+
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+     public function via($notifiable)
+    {
+        return ['database'];
+    }
+
+    // 延伸阅读删除后，通知被延伸词条协作组和关注用户延伸关系已经解除
+    public function toDatabase($notifiable)
+    {
+        $ex = $this->entryExtendedEntryReading;
+        $entry = Entry::find($ex->eid);
+        $extended = Entry::find($ex->extended_id);
+        $link = '/encyclopedia/reading/'.$extended->id.'/'.$extended->title.'#entryExtendedEntryReading';
+        // $doer = User::find($this->entryExtended->creator_id);
+        return [
+            'creator_id'    => auth('api')->user()->id,
+            'creator'       => auth('api')->user()->username,
+            'link'          => $link,
+            'matter'        => '你关注的词条《'.$extended->title.'》与词条《'.$entry->title.'》的延伸阅读关系已经解除。'
+        ];
+    }
+
+    /**
+     * Get the mail representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return \Illuminate\Notifications\Messages\MailMessage
+     */
+    public function toMail($notifiable)
+    {
+        return (new MailMessage)
+                    ->line('The introduction to the notification.')
+                    ->action('Notification Action', url('/'))
+                    ->line('Thank you for using our application!');
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function toArray($notifiable)
+    {
+        return [
+            //
+        ];
+    }
+}

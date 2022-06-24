@@ -1,0 +1,81 @@
+<?php
+
+namespace App\Notifications\Examination\ExamDebate\ExamDebateClear;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\Messages\MailMessage;
+use App\Home\Examination\ExamDebate;
+use App\Home\Examination\Exam;
+
+class ExamDebateTimeOutByRefereeClearedToRefereeNotification extends Notification
+{
+    use Queueable;
+
+    /**
+     * Create a new notification instance.
+     *
+     * @return void
+     */
+    public function __construct(ExamDebate $examDebate)
+    {
+        $this->examDebate = $examDebate;
+    }
+
+    /**
+     * Get the notification's delivery channels.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function via($notifiable)
+    {
+        return ['database'];
+    }
+
+    // 辩论
+    public function toDatabase($notifiable)
+    {
+        $debate = $this->examDebate;
+        $exam = Exam::find($debate->exam_id);
+        $link = '/examination/debate/'.$exam->id.'/'.$exam->title.'?type='.$debate->type.'&type_id='.$debate->type_id;
+        // $doer = User::find($debate->Aauthor_id);
+        $matter = '你裁判的攻辩<'.$debate->title.'>由于你结算超时，已经由系统自动结算。非常遗憾，你将受到系统惩罚，感谢参与！[来自试卷：《'.$exam->title.'》]。';
+        $creator = $debate->referee;
+        $creator_id = $debate->referee_id;
+        return [
+            'creator_id'    => $creator_id,
+            'creator'       => $creator,
+            'link'          => $link,
+            'matter'        => $matter
+        ];
+    }
+
+    /**
+     * Get the mail representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return \Illuminate\Notifications\Messages\MailMessage
+     */
+    public function toMail($notifiable)
+    {
+        return (new MailMessage)
+                    ->line('The introduction to the notification.')
+                    ->action('Notification Action', url('/'))
+                    ->line('Thank you for using our application!');
+    }
+
+    /**
+     * Get the array representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return array
+     */
+    public function toArray($notifiable)
+    {
+        return [
+            //
+        ];
+    }
+}
